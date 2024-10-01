@@ -57,7 +57,7 @@ class Model(nn.Module):
                 x_hard, x_reco, weight = batch
                 optimizer.zero_grad()
                 loss = self.batch_loss(x_hard, x_reco, weight)
-                if loss < 200:
+                if loss < 1000:
                     loss.backward()
                     optimizer.step()
                     scheduler.step()
@@ -69,10 +69,10 @@ class Model(nn.Module):
                 with torch.no_grad():
                     x_hard, x_reco, weight = batch
                     loss = self.batch_loss(x_hard, x_reco, weight)
-                    if loss < 200:
+                    if loss < 1000:
                         vallosses.append(loss.item())
-                    else:
-                        print(f"    Skipped update in epoch {epoch}, batch {i}, loss is", loss.item())
+                    #else:
+                    #    print(f"    Skipped update in epoch {epoch}, batch {i}, loss is", loss.item())
 
             avg_trainloss = torch.tensor(trainlosses).mean().item()
             avg_valloss = torch.tensor(vallosses).mean().item()
@@ -88,7 +88,7 @@ class Model(nn.Module):
             batches = torch.split(data_c, self.params["batch_size_sample"])
             t0 = time.time()
             for i, batch in enumerate(batches):
-                unfold = self.sample(batch).detach()
+                unfold = self.sample(batch).detach().cpu()
                 predictions.append(unfold)
                 t1 = time.time()
                 if i == 0:
@@ -104,7 +104,7 @@ class Model(nn.Module):
             t0 = time.time()
             for i, event in enumerate(data_c):
                 condition = event.repeat(self.params["batch_size_sample"], 1)
-                unfold = self.sample(condition).detach()
+                unfold = self.sample(condition).detach().cpu()
                 predictions.append(unfold)
                 t1 = time.time()
                 if i == 0:
@@ -130,7 +130,9 @@ class CFM(Model):
             return v
 
         x_0 = torch.randn((batch_size, self.dims_x)).to(device, dtype=dtype)
-        x_t = odeint(func=net_wrapper, y0=x_0, t=torch.tensor([0., 1.]).to(device, dtype=dtype))
+        #x_t = odeint(func=net_wrapper, y0=x_0, t=torch.linspace(0., 1., 1000).to(device, dtype=dtype))
+        #return torch.swapaxes(x_t, 0, 1)
+        x_t = odeint(func=net_wrapper, y0=x_0, t=torch.Tensor([0., 1.]).to(device, dtype=dtype))
         return x_t[-1]
 
     def batch_loss(self, x, c, weight):
@@ -167,22 +169,27 @@ class Didi(Model):
         pair_steps = zip(steps[1:], steps[:-1])
         pair_steps = pair_steps
         x_t = x_1.detach()
+        x_t_trajectory = [x_t]
         for tprev, t in pair_steps:
             drift = net_wrapper(t, x_t)
+            #drift = 2*x_1
             pred_x0 = x_t - t * drift
             x_t = (t - tprev) / t * pred_x0 + tprev / t * x_t
             x_t += (self.noise_scale * tprev * (t - tprev) / t).sqrt() * torch.randn_like(x_t)
-        return x_t
+            x_t_trajectory.append(x_t)
+        return torch.stack(x_t_trajectory, dim=1)
 
     def batch_loss(self, x_0, x_1, weight):
         noise = torch.randn_like(x_0)
         t_uniform = torch.rand((x_0.size(0), 1)).to(x_0.device)
-        t = t_uniform#**2
+        t = t_uniform #**(1./2.)
         x_t = (1 - t) * x_0 + t * x_1 + (self.noise_scale*t*(1.-t)).sqrt() * noise
         f = (x_t-x_0)/t
+        #f = x_1 - x_0
         if self.cond_x1:
             f_pred = self.network(torch.cat([t, x_t, x_1], dim=-1))
         else:
             f_pred = self.network(torch.cat([t, x_t], dim=-1))
-        loss = ((f_pred - f) ** 2 * weight.unsqueeze(-1)).mean()
-        return loss
+        loss = ((f_pred - f) ** 2 * weight.unsqueeze(-1))
+        #loss = loss * t
+        return loss.mean()

@@ -44,32 +44,33 @@ class Omnifold:
 
             if self.params.get("shift_gen", False):
                 print("    Shifting gen")
-                self.gen = self.gen[:, [1, 2, 3, 4, 5, 0]]
-
+                #self.gen = self.gen[:, [1, 2, 3, 4, 5, 0]]
+                self.gen = self.gen[:, [2, 3, 4, 5, 0, 1]]
         else:
             if not hasattr(self, "rec_mean"):
                 raise ValueError("Trying to run reverse preprocessing before forward preprocessing")
 
             if self.params.get("shift_gen", False):
-                self.gen = self.gen[:, [5, 0, 1, 2, 3, 4]]
+                self.gen = self.gen[:, [4, 5, 0, 1, 2, 3]]
+
 
             # undo standardization
             self.gen = self.gen * self.gen_std + self.gen_mean
             self.rec = self.rec * self.rec_std + self.rec_mean
 
             # round jet multiplicity back to integers
-            self.rec[:, 1] = torch.round(self.rec[:, 1])
-            self.gen[:, 1] = torch.round(self.gen[:, 1])
+            self.rec[..., 1] = torch.round(self.rec[..., 1])
+            self.gen[..., 1] = torch.round(self.gen[..., 1])
 
             if hasattr(self, "unfolded"):
                 if self.params.get("shift_gen", False):
-                    self.unfolded = self.unfolded[:, [5, 0, 1, 2, 3, 4]]
+                    self.unfolded = self.unfolded[..., [4, 5, 0, 1, 2, 3]]
                 self.unfolded = self.unfolded * self.gen_std + self.gen_mean
-                self.unfolded[:, 1] = torch.round(self.unfolded[:, 1])
+                self.unfolded[..., 1] = torch.round(self.unfolded[..., 1])
 
             if hasattr(self, "single_event_unfolded"):
                 if self.params.get("shift_gen", False):
-                    self.single_event_unfolded = self.single_event_unfolded[..., [5, 0, 1, 2, 3, 4]]
+                    self.single_event_unfolded = self.single_event_unfolded[..., [4, 5, 0, 1, 2, 3]]
                 self.single_event_unfolded = self.single_event_unfolded * self.gen_std + self.gen_mean
                 self.single_event_unfolded[..., 1] = torch.round(self.single_event_unfolded[..., 1])
 
