@@ -9,9 +9,6 @@ plt.rcParams["font.serif"] = "Charter"
 plt.rcParams["text.usetex"] = True
 plt.rcParams['text.latex.preamble'] = r'\usepackage[bitstream-charter]{mathdesign} \usepackage{amsmath}'
 FONTSIZE=16
-#plt.rc('text', usetex=True)
-#plt.rc('font', family='serif')
-#plt.rc('text.latex', preamble=r'\usepackage{amsmath}')
 
 
 def marginal_plots(path, dataset):
