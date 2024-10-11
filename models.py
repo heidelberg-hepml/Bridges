@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torchdiffeq import odeint
 import time
+from transformer import Transformer
 
 
 class Model(nn.Module):
@@ -12,14 +13,18 @@ class Model(nn.Module):
         self.params = params
 
     def init_network(self):
-        layers = []
-        layers.append(nn.Linear(self.dims_in, self.params["internal_size"]))
-        layers.append(nn.ReLU())
-        for _ in range(self.params["hidden_layers"]):
-            layers.append(nn.Linear(self.params["internal_size"], self.params["internal_size"]))
+
+        if self.params.get("network", "MLP") == "MLP":
+            layers = []
+            layers.append(nn.Linear(self.dims_in, self.params["internal_size"]))
             layers.append(nn.ReLU())
-        layers.append(nn.Linear(self.params["internal_size"], self.dims_x))
-        self.network = nn.Sequential(*layers)
+            for _ in range(self.params["hidden_layers"]):
+                layers.append(nn.Linear(self.params["internal_size"], self.params["internal_size"]))
+                layers.append(nn.ReLU())
+            layers.append(nn.Linear(self.params["internal_size"], self.dims_x))
+            self.network = nn.Sequential(*layers)
+        elif self.params.get("network", "MLP") == "Transformer":
+            self.network = Transformer(self.dims_x, self.dims_c, self.params)
 
     # Overwrite in child class
     def sample(self, c):
@@ -132,7 +137,9 @@ class CFM(Model):
         x_0 = torch.randn((batch_size, self.dims_x)).to(device, dtype=dtype)
         #x_t = odeint(func=net_wrapper, y0=x_0, t=torch.linspace(0., 1., 1000).to(device, dtype=dtype))
         #return torch.swapaxes(x_t, 0, 1)
-        x_t = odeint(func=net_wrapper, y0=x_0, t=torch.Tensor([0., 1.]).to(device, dtype=dtype))
+        x_t = odeint(func=net_wrapper,
+                     y0=x_0,
+                     t=torch.Tensor([0., 1.]).to(device, dtype=dtype))
         return x_t[-1]
 
     def batch_loss(self, x, c, weight):
@@ -172,24 +179,21 @@ class Didi(Model):
         x_t_trajectory = [x_t]
         for tprev, t in pair_steps:
             drift = net_wrapper(t, x_t)
-            #drift = 2*x_1
             pred_x0 = x_t - t * drift
             x_t = (t - tprev) / t * pred_x0 + tprev / t * x_t
             x_t += (self.noise_scale * tprev * (t - tprev) / t).sqrt() * torch.randn_like(x_t)
             x_t_trajectory.append(x_t)
-        return torch.stack(x_t_trajectory, dim=1)
+        #return torch.stack(x_t_trajectory, dim=1)
+        return x_t_trajectory[-1]
 
     def batch_loss(self, x_0, x_1, weight):
         noise = torch.randn_like(x_0)
-        t_uniform = torch.rand((x_0.size(0), 1)).to(x_0.device)
-        t = t_uniform #**(1./2.)
+        t = torch.rand((x_0.size(0), 1)).to(x_0.device)
         x_t = (1 - t) * x_0 + t * x_1 + (self.noise_scale*t*(1.-t)).sqrt() * noise
         f = (x_t-x_0)/t
-        #f = x_1 - x_0
         if self.cond_x1:
             f_pred = self.network(torch.cat([t, x_t, x_1], dim=-1))
         else:
             f_pred = self.network(torch.cat([t, x_t], dim=-1))
         loss = ((f_pred - f) ** 2 * weight.unsqueeze(-1))
-        #loss = loss * t
         return loss.mean()

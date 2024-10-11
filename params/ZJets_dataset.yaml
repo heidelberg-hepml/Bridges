@@ -1,23 +1,33 @@
-run_name: Zjets_real_50Ke
+run_name: CFM_Transformer_BreitWigner_fast
 
 dataset_params:
   type: Z_2j_dataset
-  path: /Users/huetsch/Desktop/data/Omnifold.npz
-  path_gen: /remote/gpu07/huetsch/data/Z_2j_Gen.npy
-  path_sim: /remote/gpu07/huetsch/data/Z_2j_Sim.npy
-
-  n_train: 150000
-  n_test: 150000
+  path_gen: /remote/gpu07/huetsch/Z_2j_Gen.npy
+  path_sim: /remote/gpu07/huetsch/Z_2j_Sim.npy
+  #path_gen: /Users/huetsch/Desktop/Z_2j_Gen.npy
+  #path_sim: /Users/huetsch/Desktop/Z_2j_Sim.npy
+  n_train: 1500000
 
 model_params:
   type: CFM
-  hidden_layers: 8
-  internal_size: 512
+
   lr: 1.e-3
-  n_epochs: 50000
+  n_epochs: 100
   batch_size: 16384
-  batch_size_sample: 10000
+  batch_size_sample: 16384
+
+  #network: MLP
+  #hidden_layers: 8
+  #internal_size: 512
+
+  network: Transformer
+  dim_embedding: 64
+  n_head: 4
+  n_encoder_layers: 6
+  n_decoder_layers: 6
+  dim_feedforward: 256
+  #dropout: 0
 
   cond_x1: False
-  noise_scale: 0.001
+  noise_scale: 0.1
   n_steps: 1000

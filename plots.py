@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from Z_2j_dataset import Z_2j_dataset
 from matplotlib.backends.backend_pdf import PdfPages
 
 
@@ -47,39 +48,108 @@ def marginal_plots(path, dataset):
             plt.savefig(pp, format="pdf", bbox_inches="tight", pad_inches=0.05)
             plt.close()
 
-            """
-            mask = dataset.rec[:, dim] > 0
-            hist_rec, _ = np.histogram(dataset.rec[mask, dim].cpu(), density=True, bins=bins)
-            hist_gen, _ = np.histogram(dataset.gen[mask, dim].cpu(), density=True, bins=bins)
-            hist_unfolded, _ = np.histogram(dataset.unfolded[mask, -1, dim].cpu(), density=True, bins=bins)
+        # plot correlations
+        if isinstance(dataset, Z_2j_dataset):
+            bins = torch.linspace(0, 200, 50 + 1)
+            hist_rec, _ = np.histogram(dataset.calculate_dimuon_pt(dataset.rec.cpu()), density=True, bins=bins)
+            hist_gen, _ = np.histogram(dataset.calculate_dimuon_pt(dataset.gen.cpu()), density=True, bins=bins)
+            hist_unfolded, _ = np.histogram(dataset.calculate_dimuon_pt(dataset.unfolded.cpu()), density=True, bins=bins)
 
-            fig1, axs = plt.subplots(1, 1)#, sharex=True, gridspec_kw={"height_ratios": [3, 1], "hspace": 0.00})
+            fig1, axs = plt.subplots(2, 1, sharex=True, gridspec_kw={"height_ratios": [3, 1], "hspace": 0.00})
             fig1.tight_layout(pad=0.6, w_pad=0.5, h_pad=0.6, rect=(0.07, 0.06, 0.99, 0.95))
 
             # histogram
-            axs.step(bins[1:], hist_rec, label="Rec", linewidth=1.0, where="post")
-            axs.step(bins[1:], hist_gen, label="Gen", linewidth=1.0, where="post")
-            axs.step(bins[1:], hist_unfolded, label="Unfolded", linewidth=1.0, where="post")
-            axs.set_yscale(dataset.observables[dim]["yscale"])
+            axs[0].step(bins[1:], hist_rec, label="Rec", linewidth=1.0, where="post")
+            axs[0].step(bins[1:], hist_gen, label="Gen", linewidth=1.0, where="post")
+            axs[0].step(bins[1:], hist_unfolded, label="Unfolded", linewidth=1.0, where="post")
+            axs[0].set_yscale(dataset.observables[dim]["yscale"])
 
-            axs.legend(frameon=False, fontsize=FONTSIZE)
-            axs.set_ylabel("Normalized", fontsize=FONTSIZE)
-            axs.tick_params(axis="both", labelsize=FONTSIZE)
+            axs[0].legend(frameon=False, fontsize=FONTSIZE)
+            axs[0].set_ylabel("Normalized", fontsize=FONTSIZE)
+            axs[0].tick_params(axis="both", labelsize=FONTSIZE)
 
             # ratio panel
-            #axs[1].step(bins[1:], hist_unfolded / hist_gen)
-            #axs[1].set_ylabel(r"$\frac{\mathrm{Model}}{\mathrm{True}}$", fontsize=FONTSIZE)
-            #axs[1].set_yticks([0.9, 1, 1.1])
-            #axs[1].set_ylim([0.81, 1.19])
-            #axs[1].axhline(y=1., c="black", ls="--", lw=0.7)
-            #axs[1].axhline(y=1.2, c="black", ls="dotted", lw=0.5)
-            #axs[1].axhline(y=0.8, c="black", ls="dotted", lw=0.5)
-            #axs[1].tick_params(axis="both", labelsize=FONTSIZE)
+            axs[1].step(bins[1:], hist_unfolded / hist_gen)
+            axs[1].set_ylabel(r"$\frac{\mathrm{Model}}{\mathrm{True}}$", fontsize=FONTSIZE)
+            axs[1].set_yticks([0.9, 1, 1.1])
+            axs[1].set_ylim([0.81, 1.19])
+            axs[1].axhline(y=1., c="black", ls="--", lw=0.7)
+            axs[1].axhline(y=1.2, c="black", ls="dotted", lw=0.5)
+            axs[1].axhline(y=0.8, c="black", ls="dotted", lw=0.5)
+            axs[1].tick_params(axis="both", labelsize=FONTSIZE)
 
-            plt.xlabel(dataset.observables[dim]["tex_label"], fontsize=FONTSIZE)
+            plt.xlabel(r"$p_{T, \mu \mu }$", fontsize=FONTSIZE)
             plt.savefig(pp, format="pdf", bbox_inches="tight", pad_inches=0.05)
             plt.close()
-            """
+
+
+            bins = torch.linspace(81, 101, 50 + 1)
+            hist_rec, _ = np.histogram(dataset.calculate_dimuon_mass(dataset.rec.cpu()), density=True, bins=bins)
+            hist_gen, _ = np.histogram(dataset.calculate_dimuon_mass(dataset.gen.cpu()), density=True, bins=bins)
+            hist_unfolded, _ = np.histogram(dataset.calculate_dimuon_mass(dataset.unfolded.cpu()), density=True, bins=bins)
+
+            fig1, axs = plt.subplots(2, 1, sharex=True, gridspec_kw={"height_ratios": [3, 1], "hspace": 0.00})
+            fig1.tight_layout(pad=0.6, w_pad=0.5, h_pad=0.6, rect=(0.07, 0.06, 0.99, 0.95))
+
+            # histogram
+            axs[0].step(bins[1:], hist_rec, label="Rec", linewidth=1.0, where="post")
+            axs[0].step(bins[1:], hist_gen, label="Gen", linewidth=1.0, where="post")
+            axs[0].step(bins[1:], hist_unfolded, label="Unfolded", linewidth=1.0, where="post")
+            axs[0].set_yscale(dataset.observables[dim]["yscale"])
+
+            axs[0].legend(frameon=False, fontsize=FONTSIZE)
+            axs[0].set_ylabel("Normalized", fontsize=FONTSIZE)
+            axs[0].tick_params(axis="both", labelsize=FONTSIZE)
+
+            # ratio panel
+            axs[1].step(bins[1:], hist_unfolded / hist_gen)
+            axs[1].set_ylabel(r"$\frac{\mathrm{Model}}{\mathrm{True}}$", fontsize=FONTSIZE)
+            axs[1].set_yticks([0.9, 1, 1.1])
+            axs[1].set_ylim([0.81, 1.19])
+            axs[1].axhline(y=1., c="black", ls="--", lw=0.7)
+            axs[1].axhline(y=1.2, c="black", ls="dotted", lw=0.5)
+            axs[1].axhline(y=0.8, c="black", ls="dotted", lw=0.5)
+            axs[1].tick_params(axis="both", labelsize=FONTSIZE)
+
+            plt.xlabel(r"$m_{\mu \mu }$", fontsize=FONTSIZE)
+            plt.savefig(pp, format="pdf", bbox_inches="tight", pad_inches=0.05)
+            plt.close()
+
+
+            bins = torch.linspace(0, 8, 50 + 1)
+            hist_rec, _ = np.histogram(dataset.calculate_jet_seperation(dataset.rec.cpu()), density=True, bins=bins)
+            hist_gen, _ = np.histogram(dataset.calculate_jet_seperation(dataset.gen.cpu()), density=True, bins=bins)
+            hist_unfolded, _ = np.histogram(dataset.calculate_jet_seperation(dataset.unfolded.cpu()), density=True, bins=bins)
+
+            fig1, axs = plt.subplots(2, 1, sharex=True, gridspec_kw={"height_ratios": [3, 1], "hspace": 0.00})
+            fig1.tight_layout(pad=0.6, w_pad=0.5, h_pad=0.6, rect=(0.07, 0.06, 0.99, 0.95))
+
+            # histogram
+            axs[0].step(bins[1:], hist_rec, label="Rec", linewidth=1.0, where="post")
+            axs[0].step(bins[1:], hist_gen, label="Gen", linewidth=1.0, where="post")
+            axs[0].step(bins[1:], hist_unfolded, label="Unfolded", linewidth=1.0, where="post")
+            axs[0].set_yscale(dataset.observables[dim]["yscale"])
+
+            axs[0].legend(frameon=False, fontsize=FONTSIZE)
+            axs[0].set_ylabel("Normalized", fontsize=FONTSIZE)
+            axs[0].tick_params(axis="both", labelsize=FONTSIZE)
+
+            # ratio panel
+            axs[1].step(bins[1:], hist_unfolded / hist_gen)
+            axs[1].set_ylabel(r"$\frac{\mathrm{Model}}{\mathrm{True}}$", fontsize=FONTSIZE)
+            axs[1].set_yticks([0.9, 1, 1.1])
+            axs[1].set_ylim([0.81, 1.19])
+            axs[1].axhline(y=1., c="black", ls="--", lw=0.7)
+            axs[1].axhline(y=1.2, c="black", ls="dotted", lw=0.5)
+            axs[1].axhline(y=0.8, c="black", ls="dotted", lw=0.5)
+            axs[1].tick_params(axis="both", labelsize=FONTSIZE)
+
+            plt.xlabel(r"$\Delta R_{j_1,j_2}$", fontsize=FONTSIZE)
+            plt.savefig(pp, format="pdf", bbox_inches="tight", pad_inches=0.05)
+            plt.close()
+
+
+
 
 
 def migration_plots(path, dataset):
@@ -153,3 +223,38 @@ def time_evolution_plots(path, dataset):
                     plt.plot(np.arange(dataset.unfolded.shape[1]), dataset.unfolded[i, :, dim].cpu().numpy(), color='k')
             plt.savefig(pp, format="pdf", bbox_inches="tight")
             plt.close()
+
+
+"""
+mask = dataset.rec[:, dim] > 0
+hist_rec, _ = np.histogram(dataset.rec[mask, dim].cpu(), density=True, bins=bins)
+hist_gen, _ = np.histogram(dataset.gen[mask, dim].cpu(), density=True, bins=bins)
+hist_unfolded, _ = np.histogram(dataset.unfolded[mask, -1, dim].cpu(), density=True, bins=bins)
+
+fig1, axs = plt.subplots(1, 1)#, sharex=True, gridspec_kw={"height_ratios": [3, 1], "hspace": 0.00})
+fig1.tight_layout(pad=0.6, w_pad=0.5, h_pad=0.6, rect=(0.07, 0.06, 0.99, 0.95))
+
+# histogram
+axs.step(bins[1:], hist_rec, label="Rec", linewidth=1.0, where="post")
+axs.step(bins[1:], hist_gen, label="Gen", linewidth=1.0, where="post")
+axs.step(bins[1:], hist_unfolded, label="Unfolded", linewidth=1.0, where="post")
+axs.set_yscale(dataset.observables[dim]["yscale"])
+
+axs.legend(frameon=False, fontsize=FONTSIZE)
+axs.set_ylabel("Normalized", fontsize=FONTSIZE)
+axs.tick_params(axis="both", labelsize=FONTSIZE)
+
+# ratio panel
+#axs[1].step(bins[1:], hist_unfolded / hist_gen)
+#axs[1].set_ylabel(r"$\frac{\mathrm{Model}}{\mathrm{True}}$", fontsize=FONTSIZE)
+#axs[1].set_yticks([0.9, 1, 1.1])
+#axs[1].set_ylim([0.81, 1.19])
+#axs[1].axhline(y=1., c="black", ls="--", lw=0.7)
+#axs[1].axhline(y=1.2, c="black", ls="dotted", lw=0.5)
+#axs[1].axhline(y=0.8, c="black", ls="dotted", lw=0.5)
+#axs[1].tick_params(axis="both", labelsize=FONTSIZE)
+
+plt.xlabel(dataset.observables[dim]["tex_label"], fontsize=FONTSIZE)
+plt.savefig(pp, format="pdf", bbox_inches="tight", pad_inches=0.05)
+plt.close()
+"""
