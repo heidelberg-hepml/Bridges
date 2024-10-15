@@ -1,4 +1,4 @@
-run_name: CFM_Transformer_BreitWigner_fast
+run_name: DidiCond_1_Transformer_BreitWigner_500
 
 dataset_params:
   type: Z_2j_dataset
@@ -9,11 +9,11 @@ dataset_params:
   n_train: 1500000
 
 model_params:
-  type: CFM
+  type: Didi
 
   lr: 1.e-3
-  n_epochs: 100
-  batch_size: 16384
+  n_epochs: 500
+  batch_size: 4096
   batch_size_sample: 16384
 
   #network: MLP
@@ -26,8 +26,8 @@ model_params:
   n_encoder_layers: 6
   n_decoder_layers: 6
   dim_feedforward: 256
-  #dropout: 0
+  dropout: 0
 
-  cond_x1: False
-  noise_scale: 0.1
+  cond_x1: True
+  noise_scale: 1.
   n_steps: 1000
