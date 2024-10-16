@@ -86,9 +86,9 @@ def main():
     dataset.single_event_unfolded = model.single_event_unfolding(dataset.rec[:5])
     dataset.apply_preprocessing(reverse=True)
 
-    #print("Saving samples")
-    #file_samples = os.path.join(run_dir, f"samples.pt")
-    #torch.save(dataset.unfolded.detach().cpu(), file_samples)
+    print("Saving samples")
+    file_samples = os.path.join(run_dir, f"samples.pt")
+    torch.save(dataset.unfolded.detach().cpu(), file_samples)
     #file_singleevents = os.path.join(run_dir, f"single_event_unfoldings.pt")
     #torch.save(dataset.single_event_unfolded.detach().cpu(), file_singleevents)
 
