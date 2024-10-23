@@ -1,0 +1,36 @@
+run_name: Z2j_DidiCond_1e1_Bayesian_Transformer_2000e
+
+dataset_params:
+  type: Z_2j_dataset
+  path_gen: /remote/gpu07/huetsch/Z_2j_Gen.npy
+  path_sim: /remote/gpu07/huetsch/Z_2j_Sim.npy
+  #path_gen: /Users/huetsch/Desktop/Z_2j_Gen.npy
+  #path_sim: /Users/huetsch/Desktop/Z_2j_Sim.npy
+  n_train: 1500000
+
+model_params:
+  type: Didi
+  bayesian: True
+  bayesian_factor: 1.
+  n_bayesian_samples: 20
+
+  lr: 1.e-3
+  n_epochs: 2000
+  batch_size: 16384
+  batch_size_sample: 16384
+
+  #network: MLP
+  hidden_layers: 2
+  internal_size: 32
+
+  network: Transformer
+  dim_embedding: 64
+  n_head: 4
+  n_encoder_layers: 6
+  n_decoder_layers: 6
+  dim_feedforward: 256
+  dropout: 0
+
+  cond_x1: True
+  noise_scale: 0.1
+  n_steps: 1000

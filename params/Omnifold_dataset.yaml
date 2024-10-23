@@ -1,0 +1,27 @@
+run_name: OF6_DidCond_1e1_Bayesian_64kBS_300e
+
+dataset_params:
+  type: Omnifold
+  path: /Users/huetsch/Desktop/data/Omnifold.npz
+  path_train: /remote/gpu07/huetsch/data/omnifold_data/OmniFold_big/OmniFold_train_large.h5
+  n_train: 20000000
+  path_test: /remote/gpu07/huetsch/data/omnifold_data/OmniFold_big/OmniFold_test.h5
+  n_test: 4000000
+  shift_gen: False
+
+model_params:
+  type: Didi
+  bayesian: True
+  n_bayesian_samples: 20
+  bayesian_factor: 1.0
+
+  hidden_layers: 5
+  internal_size: 128
+  lr: 1.e-3
+  n_epochs: 300
+  batch_size: 65536
+  batch_size_sample: 65536
+
+  cond_x1: True
+  noise_scale: 0.1
+  n_steps: 1000

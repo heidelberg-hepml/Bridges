@@ -1,0 +1,15 @@
+lr: 1.e-3
+n_epochs: 30
+batch_size: 256
+batch_size_sample: 16384
+
+network: MLP
+hidden_layers: 5
+internal_size: 256
+
+#network: Transformer
+dim_embedding: 64
+n_head: 4
+n_encoder_layers: 4
+dim_feedforward: 256
+dropout: 0

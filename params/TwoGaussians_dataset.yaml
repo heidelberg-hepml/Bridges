@@ -1,0 +1,21 @@
+run_name: TwoGaussians_DidiCond_01_longer
+
+dataset_params:
+  type: TwoGaussians
+  n_train: 500000
+  n_test: 100000
+  mu: 4
+  sigma: 1
+
+model_params:
+  type: Didi
+  hidden_layers: 4
+  internal_size: 64
+  lr: 1.e-3
+  n_epochs: 150
+  batch_size: 16384
+  batch_size_sample: 16384
+
+  cond_x1: True
+  noise_scale: 0.1
+  n_steps: 1000
