@@ -1,4 +1,4 @@
-run_name: OF6_DidCond_1e1_Bayesian_64kBS_300e
+run_name: OF6_DidCond_1e1_e3mint_Bayesian_300e
 
 dataset_params:
   type: Omnifold
@@ -19,8 +19,8 @@ model_params:
   internal_size: 128
   lr: 1.e-3
   n_epochs: 300
-  batch_size: 65536
-  batch_size_sample: 65536
+  batch_size: 16384
+  batch_size_sample: 16384
 
   cond_x1: True
   noise_scale: 0.1

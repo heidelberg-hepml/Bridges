@@ -1,0 +1,29 @@
+run_name: Hi
+
+dataset_params:
+  path_train: /remote/gpu07/huetsch/data/omnifold_data/OmniFold_big/OmniFold_train_large.h5
+  n_train: 5000
+  path_test: /remote/gpu07/huetsch/data/omnifold_data/OmniFold_big/OmniFold_test.h5
+  n_test: 1000000
+  shift_gen: False
+
+model_params:
+  type: CFM
+  bayesian: False
+
+  hidden_layers: 4
+  internal_size: 64
+  lr: 1.e-3
+  n_epochs: 500
+  batch_size: 128
+  batch_size_sample: 16384
+  
+classifier_params:
+  network: MLP
+  hidden_layers: 4
+  internal_size: 64
+  dropout: 0.1
+  lr: 1.e-3
+  n_epochs: 500
+  batch_size: 128
+  batch_size_sample: 16384

@@ -257,7 +257,7 @@ class Didi(Model):
 
     def batch_loss(self, x_0, x_1, weight):
         noise = torch.randn_like(x_0)
-        t = torch.rand((x_0.size(0), 1)).to(x_0.device)
+        t = torch.rand((x_0.size(0), 1)).to(x_0.device).clamp(min=1.e-3)
         if self.noise_scale > 0:
             x_t = (1 - t) * x_0 + t * x_1 + (self.noise_scale*t*(1.-t)).sqrt() * noise
             f = (x_t-x_0)/t
