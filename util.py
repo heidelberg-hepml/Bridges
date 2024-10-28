@@ -71,3 +71,36 @@ def breit_wigner_reverse(events, peak_position, width):
     a = np.tan(a)
     a = a*width + peak_position
     return a
+
+
+# define correlation functions
+def calculate_dimuon_pt(dataset):
+
+    muon1_pt = dataset[:, 0]
+    muon1_eta = dataset[:, 1]
+    muon1_phi = dataset[:, 2]
+    muon2_pt = dataset[:, 3]
+    muon2_eta = dataset[:, 4]
+    muon2_phi = dataset[:, 5]
+    dimuon_pt_2 = muon1_pt ** 2 + muon2_pt ** 2 + 2 * muon1_pt * muon2_pt * np.cos(muon1_phi - muon2_phi)
+    return np.sqrt(dimuon_pt_2)
+
+def calculate_dimuon_mass(dataset):
+
+    muon1_pt = dataset[:, 0]
+    muon1_eta = dataset[:, 1]
+    muon1_phi = dataset[:, 2]
+    muon2_pt = dataset[:, 3]
+    muon2_eta = dataset[:, 4]
+    muon2_phi = dataset[:, 5]
+    dimuon_mass_2 = 2 * muon1_pt * muon2_pt * ((np.cosh(muon1_eta - muon2_eta) - np.cos(muon1_phi - muon2_phi)))
+    return np.sqrt(dimuon_mass_2)
+
+def calculate_jet_seperation(dataset):
+
+    jet1_eta = dataset[:, 7]
+    jet1_phi = dataset[:, 8]
+    jet2_eta = dataset[:, 15]
+    jet2_phi = dataset[:, 16]
+    dR_2 = (jet1_eta - jet2_eta)**2 + (jet1_phi - jet2_phi)**2
+    return np.sqrt(dR_2)

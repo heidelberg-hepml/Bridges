@@ -14,7 +14,7 @@ import numpy as np
 from omnifold_dataset import Omnifold
 from Z_2j_dataset import Z_2j_dataset
 from transformer import Classification_Transformer
-
+from util import calculate_dimuon_pt, calculate_dimuon_mass, calculate_jet_seperation
 
 def main():
     # read in arguments. path to the folder with the SB results and path to classifier params file
@@ -29,10 +29,6 @@ def main():
     
     # check if conditional (meaning we train on gen and rec as opposed to just gen)
     conditional = classifier_params.get("conditional", False)
-    
-    # read in model params
-    with open(os.path.join(args.model_path, "params.yaml"), 'r') as f:
-        model_params = yaml.safe_load(f)
     
     # create folder for classifier results
     date_time = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -60,60 +56,67 @@ def main():
     device = "cuda" if cuda_available else "cpu"
     print(f"Using device {device}")
 
-    # get the dataset
-    print("Building dataset", model_params["dataset_params"]["type"])
-    dataset = eval(model_params["dataset_params"]["type"])(model_params["dataset_params"])
-    #dataset.init_dataset(test=True)
-    # get gen and rec dimension from the dataset
-    dims_gen = dataset.gen.shape[-1]
-    dims_rec = dataset.rec.shape[-1]
-
-    # load the samples
-    if args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results/Conditional":
-        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results/Z2Jet_SB_SC_unfolded.npy"
-        file_gen = "/remote/gpu07/huetsch/Bridges/SB_results/Z2Jet_SB_SC_gen.npy"
-        file_rec = "/remote/gpu07/huetsch/Bridges/SB_results/Z2Jet_SB_SC_reco.npy"
+    # load the samples 
+    if args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Conditional":
+        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_SC_unfolded.npy"
+        file_gen = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_SC_gen.npy"
+        file_rec = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_SC_reco.npy"
+    elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Unconditional":
+        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_unfolded.npy"
+        file_gen = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_gen.npy"
+        file_rec = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_reco.npy"
+    elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_OF/Conditional":
+        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_unfolded.npy"
+        file_gen = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_gen.npy"
+        file_rec = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_reco.npy"
+    elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_OF/Unconditional":
+        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_unfolded.npy"
+        file_gen = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_gen.npy"
+        file_rec = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_reco.npy"
     else:
-        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results/Z2Jet_SB_unfolded.npy"
-        file_gen = "/remote/gpu07/huetsch/Bridges/SB_results/Z2Jet_SB_gen.npy"
-        file_rec = "/remote/gpu07/huetsch/Bridges/SB_results/Z2Jet_SB_reco.npy"
+        raise ValueError(f"Unknown model path {args.model_path}")
+    
+
    
     print("Loading samples")
-    dataset.unfolded = torch.from_numpy(np.load(file_samples, allow_pickle=True)).float()
-    dataset.gen = torch.from_numpy(np.load(file_gen, allow_pickle=True)).float()
-    dataset.rec = torch.from_numpy(np.load(file_rec, allow_pickle=True)).float()
+    unfolded = torch.from_numpy(np.load(file_samples, allow_pickle=True)).float().squeeze() 
+    gen = torch.from_numpy(np.load(file_gen, allow_pickle=True)).float().squeeze()
+    rec = torch.from_numpy(np.load(file_rec, allow_pickle=True)).float().squeeze()
 
-    print(f"Dataset shapes: unfolded {dataset.unfolded.shape}, gen {dataset.gen.shape}, rec {dataset.rec.shape}")
+    dims_gen = gen.shape[-1]
+    dims_rec = rec.shape[-1]
+
+    print(f"Dataset shapes: unfolded {unfolded.shape}, gen {gen.shape}, rec {rec.shape}")
 
     # if the dataset is Z_2j_dataset, include correlations
-    if isinstance(dataset, Z_2j_dataset):   
+    if dims_gen == 22:   
         print("Including correlations")
-        dimuon_pt_unfolded = dataset.calculate_dimuon_pt(dataset.unfolded).unsqueeze(1)
-        dimuon_pt_rec = dataset.calculate_dimuon_pt(dataset.rec).unsqueeze(1)
-        dimuon_pt_gen = dataset.calculate_dimuon_pt(dataset.gen).unsqueeze(1)
+        dimuon_pt_unfolded = calculate_dimuon_pt(unfolded).unsqueeze(1)
+        dimuon_pt_rec = calculate_dimuon_pt(rec).unsqueeze(1)
+        dimuon_pt_gen = calculate_dimuon_pt(gen).unsqueeze(1)
 
-        dimuon_mass_unfolded = dataset.calculate_dimuon_mass(dataset.unfolded).unsqueeze(1)
-        dimuon_mass_rec = dataset.calculate_dimuon_mass(dataset.rec).unsqueeze(1)
-        dimuon_mass_gen = dataset.calculate_dimuon_mass(dataset.gen).unsqueeze(1)   
+        dimuon_mass_unfolded = calculate_dimuon_mass(unfolded).unsqueeze(1)
+        dimuon_mass_rec = calculate_dimuon_mass(rec).unsqueeze(1)
+        dimuon_mass_gen = calculate_dimuon_mass(gen).unsqueeze(1)   
 
-        jet_seperation_unfolded = dataset.calculate_jet_seperation(dataset.unfolded).unsqueeze(1)
-        jet_seperation_rec = dataset.calculate_jet_seperation(dataset.rec).unsqueeze(1)
-        jet_seperation_gen = dataset.calculate_jet_seperation(dataset.gen).unsqueeze(1)
+        jet_seperation_unfolded = calculate_jet_seperation(unfolded).unsqueeze(1)
+        jet_seperation_rec = calculate_jet_seperation(rec).unsqueeze(1)
+        jet_seperation_gen = calculate_jet_seperation(gen).unsqueeze(1)
 
-        dataset.unfolded = torch.cat([dataset.unfolded, dimuon_pt_unfolded, dimuon_mass_unfolded, jet_seperation_unfolded], dim=1)
-        dataset.gen = torch.cat([dataset.gen, dimuon_pt_gen, dimuon_mass_gen, jet_seperation_gen], dim=1)
-        dataset.rec = torch.cat([dataset.rec, dimuon_pt_rec, dimuon_mass_rec, jet_seperation_rec], dim=1)
+        unfolded = torch.cat([unfolded, dimuon_pt_unfolded, dimuon_mass_unfolded, jet_seperation_unfolded], dim=1)
+        gen = torch.cat([gen, dimuon_pt_gen, dimuon_mass_gen, jet_seperation_gen], dim=1)
+        rec = torch.cat([rec, dimuon_pt_rec, dimuon_mass_rec, jet_seperation_rec], dim=1)
 
         dims_gen += 3
         dims_rec += 3
 
     # standardize the data
-    mean_gen, std_gen = dataset.gen.mean(dim=0), dataset.gen.std(dim=0)
-    mean_rec, std_rec = dataset.rec.mean(dim=0), dataset.rec.std(dim=0)
+    mean_gen, std_gen = gen.mean(dim=0), gen.std(dim=0)
+    mean_rec, std_rec = rec.mean(dim=0), rec.std(dim=0)
 
-    dataset.unfolded = (dataset.unfolded - mean_gen) / std_gen
-    dataset.gen = (dataset.gen - mean_gen) / std_gen
-    dataset.rec = (dataset.rec - mean_rec) / std_rec
+    unfolded = (unfolded - mean_gen) / std_gen
+    gen = (gen - mean_gen) / std_gen
+    rec = (rec - mean_rec) / std_rec
 
 
     # run the classifier for the given number of iterations
@@ -148,7 +151,7 @@ def main():
         # prepare data
         # for each iteration, sample 80% of the data for training and 20% for validation
         print("Preparing data")
-        n_samples = len(dataset.unfolded)
+        n_samples = len(unfolded)
         permutation = torch.randperm(n_samples)
         n_train = int(n_samples * 0.8)
         train_indices = permutation[:n_train]
@@ -156,11 +159,11 @@ def main():
 
         # if conditional, train on gen and rec, otherwise just on gen
         if conditional:
-            train_true = torch.cat([dataset.gen[train_indices], dataset.rec[train_indices]], dim=1)
-            train_false = torch.cat([dataset.unfolded[train_indices], dataset.rec[train_indices]], dim=1)
+            train_true = torch.cat([gen[train_indices], rec[train_indices]], dim=1)
+            train_false = torch.cat([unfolded[train_indices], rec[train_indices]], dim=1)
         else:
-            train_true = dataset.gen[train_indices]
-            train_false = dataset.unfolded[train_indices]
+            train_true = gen[train_indices]
+            train_false = unfolded[train_indices]
 
         # concatenate true and false samples and move to device. prepare labels
         train_data = torch.cat([train_true, train_false], dim=0).to(device)
@@ -168,11 +171,11 @@ def main():
 
         # build validation data and labels
         if conditional:
-            val_true = torch.cat([dataset.gen[val_indices], dataset.rec[val_indices]], dim=1)
-            val_false = torch.cat([dataset.unfolded[val_indices], dataset.rec[val_indices]], dim=1)
+            val_true = torch.cat([gen[val_indices], rec[val_indices]], dim=1)
+            val_false = torch.cat([unfolded[val_indices], rec[val_indices]], dim=1)
         else:
-            val_true = dataset.gen[val_indices]
-            val_false = dataset.unfolded[val_indices]
+            val_true = gen[val_indices]
+            val_false = unfolded[val_indices]
         val_data = torch.cat([val_true, val_false], dim=0).to(device)
         val_labels = torch.cat([torch.ones(len(val_true)), torch.zeros(len(val_false))], dim=0).to(device).unsqueeze(1)
         print(f"Train true shape is {train_true.shape}, train false shape is {train_false.shape}, Val true shape is {val_true.shape}, val false shape is {val_false.shape}")
@@ -236,11 +239,11 @@ def main():
         with torch.no_grad():
             # prepare test data and labels
             if conditional:
-                test_true = torch.cat([dataset.gen[:n_samples], dataset.rec[:n_samples]], dim=1)
-                test_false = torch.cat([dataset.unfolded[:n_samples], dataset.rec[:n_samples]], dim=1)
+                test_true = torch.cat([gen[:n_samples], rec[:n_samples]], dim=1)
+                test_false = torch.cat([unfolded[:n_samples], rec[:n_samples]], dim=1)
             else:
-                test_true = dataset.gen[:n_samples]
-                test_false = dataset.unfolded[:n_samples]
+                test_true = gen[:n_samples]
+                test_false = unfolded[:n_samples]
             test_data = torch.cat([test_true, test_false], dim=0).to(device)
             test_labels = torch.cat([torch.ones(len(test_true)), torch.zeros(len(test_false))], dim=0).to(device).unsqueeze(1)
             testset = torch.utils.data.TensorDataset(test_data, test_labels)
@@ -292,15 +295,6 @@ def main():
         plt.savefig(os.path.join(classifier_folder, f"classifier_loss_{iteration}.png"))
         plt.close()
 
-        # plot predictions
-        #plt.figure()
-        #plt.scatter(predictions, labels)
-        #plt.xlabel('Predictions')
-        #plt.ylabel('Labels')
-        #plt.title('Predictions vs labels')
-        #plt.savefig(os.path.join(args.model_path, "classifier_predictions.png"))
-        #plt.close()
-
         # plot histograms
         plt.figure()
         plt.hist(predictions[labels == 0], bins=50, alpha=0.5, label='False')
@@ -312,14 +306,6 @@ def main():
         plt.yscale('log')
         plt.savefig(os.path.join(classifier_folder, f"classifier_histograms_{iteration}.png"))
         plt.close()
-
-        # plot reweighted samples
-        #weights_unfolded = weights[labels==0]
-        #dataset.unfolded = dataset.unfolded * std_gen + mean_gen
-        #dataset.rec = dataset.rec * std_rec + mean_rec  
-        #dataset.gen = dataset.gen * std_gen + mean_gen
-        #marginal_plots(os.path.join(args.model_path, "classifier_marginals_reweighted.pdf"), dataset, weights=weights_unfolded)
-
 
 if __name__ == '__main__':
     main()

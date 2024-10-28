@@ -1,8 +1,8 @@
 conditional: True
-iterations: 10
+iterations: 2
 
 lr: 1.e-3
-n_epochs: 50
+n_epochs: 20
 batch_size: 128
 batch_size_sample: 16384
 

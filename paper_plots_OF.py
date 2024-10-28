@@ -57,9 +57,9 @@ observables.append({
 def migration_plots(path, rec_container, gen_container, *model_containers):
     
     # number of models. hardcoded for now
-    n_models = 3
+    n_models = len(model_containers)
     
-    fig, axs = plt.subplots(4, 3, figsize=(10,14))
+    fig, axs = plt.subplots(n_models+1, 3, figsize=(10,14))
     
     # observables to plot. hardcoded for now
     obsverbales_to_plot = [1,2,4]
@@ -81,10 +81,10 @@ def migration_plots(path, rec_container, gen_container, *model_containers):
 
         
     # plot model migrations
-    for n_model in range(3):
+    for n_model in range(len(model_containers)):
         model = model_containers[n_model]
         
-        label = ["CFM", "DM", "CDM"][n_model]
+        label = ["CFM", "DM", "CDM", "SB-SC", "SB-uncond"][n_model]
         
         for i_plot, i in enumerate(obsverbales_to_plot):
             o = observables[i]
@@ -92,7 +92,6 @@ def migration_plots(path, rec_container, gen_container, *model_containers):
             bins = o["bins"]
             unfold = model["samples"][-1, :, i]
             rec = rec_container["samples"][:, i]
-
             axs[n_model+1, i_plot].hist2d(unfold, rec, density=True, bins=bins, rasterized=True, norm=LogNorm())
             axs[n_model+1, i_plot].set_title(label, fontsize=FONTSIZE)
             axs[n_model+1, i_plot].set_xlabel(o_label+"  (Rec)", fontsize=FONTSIZE)
@@ -138,9 +137,23 @@ container_cfm = make_container(path_cfm, "CFM", "#A52A2A")
 container_didi = make_container(path_didi, "Didi", "#008000")
 container_didiCond = make_container(path_didiCond, "Cond. Didi", "#FFA500")
 
+path_SB_SC = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_unfolded.npy"
+path_SB_uncond = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_unfolded.npy"
+
+container_SB_SC = {
+    "label": "SB-SC",
+    "color": "brown",
+    "samples": np.load(path_SB_SC, allow_pickle=True)[:, :4000000, [0, 2, 5, 1, 3, 4]]
+}
+container_SB_uncond = {
+    "label": "SB-uncond",
+    "color": "grey",
+    "samples": np.load(path_SB_uncond, allow_pickle=True)[:, :4000000, [0, 2, 5, 1, 3, 4]]
+}
+
 # plot migration plots
 print("Plotting migration plots")
-migration_plots("paperplots/migration_plots_OF.pdf", rec_container, gen_container, container_cfm, container_didi, container_didiCond)
+migration_plots("paperplots/migration_plots_OF.pdf", rec_container, gen_container, container_cfm, container_didi, container_didiCond, container_SB_SC, container_SB_uncond)
 
 def marginal_plots(path, rec_container, gen_container, *model_containers):
     dims = len(observables)
@@ -150,10 +163,9 @@ def marginal_plots(path, rec_container, gen_container, *model_containers):
             hist_rec, _ = np.histogram(rec_container["samples"][:, dim], density=True, bins=bins)
             hist_gen, _ = np.histogram(gen_container["samples"][:, dim], density=True, bins=bins)
 
-            n_bayesian_samples = model_containers[0]["samples"].shape[0]
-
             model_histograms = []
             for container in model_containers:
+                n_bayesian_samples = container["samples"].shape[0]
                 hist_unfolded = np.stack([np.histogram(container["samples"][sample, :, dim], density=True, bins=bins)[0] for sample in range(n_bayesian_samples)])
                 model_histograms.append(hist_unfolded)
 
@@ -192,4 +204,4 @@ def marginal_plots(path, rec_container, gen_container, *model_containers):
             plt.close()
 
 print("Plotting marginal plots")
-marginal_plots("paperplots/marginal_plots_OF.pdf", rec_container, gen_container, container_cfm, container_didi, container_didiCond)
+marginal_plots("paperplots/marginal_plots_OF.pdf", rec_container, gen_container, container_cfm, container_didi, container_didiCond, container_SB_SC, container_SB_uncond)
