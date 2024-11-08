@@ -1,4 +1,4 @@
-run_name: OF6_DidCond_1_Bayesian_350e_64k
+run_name: OF6_DidCond_01_200e_64k_larger
 
 dataset_params:
   type: Omnifold
@@ -11,17 +11,17 @@ dataset_params:
 
 model_params:
   type: Didi
-  bayesian: True
-  n_bayesian_samples: 20
+  bayesian: False
+  n_bayesian_samples: 1
   bayesian_factor: 1.0
 
-  hidden_layers: 6
-  internal_size: 256
+  hidden_layers: 8
+  internal_size: 512
   lr: 1.e-3
-  n_epochs: 350
+  n_epochs: 200
   batch_size: 65536
   batch_size_sample: 65536
 
   cond_x1: True
-  noise_scale: 1.
+  noise_scale: 0.1
   n_steps: 1000

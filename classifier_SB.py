@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from datetime import datetime
 import numpy as np
+import h5py
 
 from omnifold_dataset import Omnifold
 from Z_2j_dataset import Z_2j_dataset
@@ -57,31 +58,42 @@ def main():
     print(f"Using device {device}")
 
     # load the samples 
-    if args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Conditional":
-        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_SC_unfolded.npy"
+    if "Z2" in args.momodel_path:
         file_gen = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_SC_gen.npy"
         file_rec = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_SC_reco.npy"
-    elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Unconditional":
-        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_unfolded.npy"
-        file_gen = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_gen.npy"
-        file_rec = "/remote/gpu07/huetsch/Bridges/SB_results_Z2j/Z2Jet_SB_reco.npy"
-    elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_OF/Conditional":
-        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_unfolded.npy"
-        file_gen = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_gen.npy"
-        file_rec = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_reco.npy"
-    elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_OF/Unconditional":
-        file_samples = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_unfolded.npy"
-        file_gen = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_gen.npy"
-        file_rec = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_reco.npy"
-    else:
-        raise ValueError(f"Unknown model path {args.model_path}")
-    
 
-   
-    print("Loading samples")
-    unfolded = torch.from_numpy(np.load(file_samples, allow_pickle=True)).float().squeeze() 
-    gen = torch.from_numpy(np.load(file_gen, allow_pickle=True)).float().squeeze()
-    rec = torch.from_numpy(np.load(file_rec, allow_pickle=True)).float().squeeze()
+        if args.model_path == "/remote/gpu07/huetsch/Bridges/SB_Z2j_0511/SB_BS":
+            file_samples = "/remote/gpu07/huetsch/Bridges/SB_Z2j_0511/SB_BS/Z2Jet_SB_BS_step50_unfolded.npy"
+            
+        elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_Z2j_0511/SB_BS_cond":
+            file_samples = "/remote/gpu07/huetsch/Bridges/SB_Z2j_0511/SB_BS_cond/Z2Jet_SB_BS_SC_step50_unfolded.npy"
+
+        elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_Z2j_0511/SB_long":
+            file_samples = "/remote/gpu07/huetsch/Bridges/SB_Z2j_0511/SB_long/Z2Jet_SB_Long_step50_unfolded.npy"
+
+        elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_Z2j_0511/SB_long_cond":
+            file_samples = "/remote/gpu07/huetsch/Bridges/SB_Z2j_0511/SB_long_cond/Z2Jet_SB_Long_SC_step50_unfolded.npy"
+
+        else:
+            raise ValueError(f"Unknown model path {args.model_path}")
+    
+        print(f"Loading samples from {file_samples}")
+        unfolded = torch.from_numpy(np.load(file_samples, allow_pickle=True)).float().squeeze() 
+        gen = torch.from_numpy(np.load(file_gen, allow_pickle=True)).float().squeeze()
+        rec = torch.from_numpy(np.load(file_rec, allow_pickle=True)).float().squeeze()
+
+    elif "OF" in args.model_path:
+        if args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_OF/Conditional":
+            file_samples = "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_SC_unfolded.npy"
+        elif args.model_path == "/remote/gpu07/huetsch/Bridges/SB_results_OF/Unconditional":
+            "/remote/gpu07/huetsch/Bridges/SB_results_OF/SBUnfold_OmniFolddata_largeset_unfolded.npy"
+            
+        print(f"Loading samples from {file_samples}")
+        unfolded = torch.from_numpy(np.load(file_samples, allow_pickle=True)).float().squeeze() 
+        path_testdata = "/remote/gpu07/huetsch/data/omnifold_data/OmniFold_big/OmniFold_test.h5"
+        with h5py.File(path_testdata, "r") as f:
+            gen = torch.from_numpy(np.array(f["hard"])[:]).float().squeeze()
+            rec = torch.from_numpy(np.array(f["reco"])[:]).float().squeeze()    
 
     dims_gen = gen.shape[-1]
     dims_rec = rec.shape[-1]

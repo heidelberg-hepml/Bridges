@@ -1,4 +1,4 @@
-run_name: Z2j_Didi_1e3_Bayesian_Transformer_300e
+run_name: Z2j_Didi_0_Bayesian_Transformer_300e_01dropout
 
 dataset_params:
   type: Z_2j_dataset
@@ -12,12 +12,12 @@ model_params:
   type: Didi
   bayesian: True
   bayesian_factor: 1.
-  n_bayesian_samples: 20
+  n_bayesian_samples: 2
 
   lr: 1.e-3
   n_epochs: 300
-  batch_size: 16384
-  batch_size_sample: 16384
+  batch_size: 8192
+  batch_size_sample: 8192
 
   #network: MLP
   hidden_layers: 2
@@ -29,8 +29,8 @@ model_params:
   n_encoder_layers: 6
   n_decoder_layers: 6
   dim_feedforward: 256
-  dropout: 0
+  dropout: 0.1
 
   cond_x1: False
-  noise_scale: 0.001
+  noise_scale: 0.
   n_steps: 1000
