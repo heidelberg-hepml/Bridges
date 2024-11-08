@@ -12,9 +12,6 @@ from datetime import datetime
 import numpy as np
 import h5py
 
-from omnifold_dataset import Omnifold
-from Z_2j_dataset import Z_2j_dataset
-from transformer import Classification_Transformer
 from util import calculate_dimuon_pt, calculate_dimuon_mass, calculate_jet_seperation
 
 def main():
