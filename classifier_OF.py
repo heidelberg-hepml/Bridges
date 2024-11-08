@@ -271,15 +271,6 @@ def main():
         plt.savefig(os.path.join(classifier_folder, f"classifier_loss_{iteration}.png"))
         plt.close()
 
-        # plot predictions
-        #plt.figure()
-        #plt.scatter(predictions, labels)
-        #plt.xlabel('Predictions')
-        #plt.ylabel('Labels')
-        #plt.title('Predictions vs labels')
-        #plt.savefig(os.path.join(args.model_path, "classifier_predictions.png"))
-        #plt.close()
-
         # plot histograms
         plt.figure()
         plt.hist(predictions[labels == 0], bins=50, alpha=0.5, label='False')
@@ -291,14 +282,6 @@ def main():
         plt.yscale('log')
         plt.savefig(os.path.join(classifier_folder, f"classifier_histograms_{iteration}.png"))
         plt.close()
-
-        # plot reweighted samples
-        #weights_unfolded = weights[labels==0]
-        #dataset.unfolded = dataset.unfolded * std_gen + mean_gen
-        #dataset.rec = dataset.rec * std_rec + mean_rec  
-        #dataset.gen = dataset.gen * std_gen + mean_gen
-        #marginal_plots(os.path.join(args.model_path, "classifier_marginals_reweighted.pdf"), dataset, weights=weights_unfolded)
-
 
 if __name__ == '__main__':
     main()
